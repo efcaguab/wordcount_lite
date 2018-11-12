@@ -2,9 +2,9 @@
 #'
 #' This packages is an addin for RStudio that will count the words and characters in a plain text document. It is designed for use with R markdown documents and will exclude YAML header content, code chunks and inline code from the counts. It also computes readability statistics so you can get an idea of how easy or difficult your text is to read.
 #'
-#' @name wordcountaddin
+#' @name wordcountaddin_lite
 #' @docType package
-#' @import purrr stringi koRpus
+#' @import stringi
 NULL
 
 #-------------------------------------------------------------------
@@ -33,9 +33,9 @@ text_stats <- function(filename = "") {
 
   text_to_count <-
 
-  if(nchar(filename) > 0){
+  if (nchar(filename) > 0) {
     # if a filename is supplied, check that it is a md or rmd file
-    if(!grepl(md_file_ext_regex, filename)){
+    if (!grepl(md_file_ext_regex, filename)) {
            stop(paste("The supplied file has a file extension which is not associated with markdown.",
                       "This function only works with markdown or R markdown files.", sep = "\n  "))
     } else {
@@ -44,83 +44,11 @@ text_stats <- function(filename = "") {
     }
 
     } else  {
-
-    # if we don'thave a filename, then work with current Rmd in RStudio
-    context <- rstudioapi::getActiveDocumentContext()
-
-    # get selection text and full text of Rmd
-    selection_text <- unname(unlist(context$selection)["text"])
-    entire_document_text <- paste(scan(context$path, 'character', quiet = TRUE), collapse = " ")
-
-    # if the selection has no characters (ie. there is no selection), then count the words in the full text of the Rmd
-      if(nchar(selection_text) > 0){
-        selection_text
-      } else  {
-        entire_document_text
-      }
+      stop()
   }
-
-
-
-
-
   text_stats_fn(text_to_count)
 }
 
-#' Get readability stats for selected text (excluding code chunks)
-#'
-#' Call this addin to get readbility stats about the text
-#'
-#' @export
-readability <- function(filename = "") {
-
-  md_file_ext_regex <- paste(
-    "\\.markdown$",
-    "\\.mdown$",
-    "\\.mkdn$",
-    "\\.md$",
-    "\\.mkd$",
-    "\\.mdwn$",
-    "\\.mdtxt$",
-    "\\.mdtext$",
-    "\\.rmd$",
-    "\\.Rmd$",
-    "\\.RMD$",
-    sep = "|")
-
-  text_to_count <-
-
-    if(nchar(filename) > 0){
-      # if a filename is supplied, check that it is a md or rmd file
-      if(!grepl(md_file_ext_regex, filename)){
-        stop(paste("The supplied file has a file extension which is not associated with markdown.",
-                   "This function only works with markdown or R markdown files.", sep = "\n  "))
-      } else {
-        # if we have an md or Rmd file, read it in as a character vector
-        paste(scan(filename, 'character', quiet = TRUE), collapse = " ")
-      }
-
-    } else  {
-
-      # if we don'thave a filename, then work with current Rmd in RStudio
-      context <- rstudioapi::getActiveDocumentContext()
-
-      # get selection text and full text of Rmd
-      selection_text <- unname(unlist(context$selection)["text"])
-      entire_document_text <- paste(scan(context$path, 'character', quiet = TRUE), collapse = " ")
-
-      # if the selection has no characters (ie. there is no selection), then count the words in the full text of the Rmd
-      if(nchar(selection_text) > 0){
-        selection_text
-      } else  {
-        entire_document_text
-      }
-    }
-
-
-
-  readability_fn(text_to_count)
-}
 
 #---------------------------------------------------------------
 # directly work on a character string in the console
@@ -133,27 +61,13 @@ readability <- function(filename = "") {
 #' @export
 text_stats_chr <- function(text) {
 
-  text <- paste(text, collapse="\n")
+  text <- paste(text, collapse = "\n")
 
   text_stats_fn(text)
 
 }
 
 
-#' Get readability stats for selected text (excluding code chunks)
-#'
-#' Use this function with a character string as input
-#'
-#' @param text a character string of text, length of one
-#'
-#' @export
-readability_chr <- function(text) {
-
-  text <- paste(text, collapse = "\n")
-
-  readability_fn(text)
-
-}
 #-----------------------------------------------------------
 # helper fns
 
@@ -196,7 +110,7 @@ prep_text <- function(text){
   # how to do? problem with capturing \x
 
 
-  if(nchar(text) == 0){
+  if (nchar(text) == 0) {
     stop("You have not selected any text. Please select some text with the mouse and try again")
   } else {
 
@@ -204,14 +118,6 @@ prep_text <- function(text){
 
   }
 
-}
-
-prep_text_korpus <- function(text){
-  requireNamespace("koRpus.lang.en")
-  tokenize_safe <- purrr::safely(koRpus::tokenize)
-  k1 <- tokenize_safe(text, lang = 'en', format = 'obj')
-  k1 <- k1$result
-  return(k1)
 }
 
 
@@ -223,40 +129,20 @@ text_stats_fn_ <- function(text){
 
   text <- prep_text(text)
 
-
-  requireNamespace("stringi")
-  requireNamespace("koRpus")
-  require("koRpus.lang.en")
-  requireNamespace("sylly")
-
   # stringi methods
-  n_char_tot <- sum(stri_stats_latex(text)[c(1,3)])
-  n_words_stri <- unname(stri_stats_latex(text)[4])
+  n_char_tot <- sum(stringi::stri_stats_latex(text)[c(1,3)])
+  n_words_stri <- unname(stringi::stri_stats_latex(text)[4])
 
-  #korpus methods
-  k1 <- prep_text_korpus(text)
-  korpus_stats <- sylly::describe(k1)
-  k_nchr <- korpus_stats$all.chars
-  k_wc <- korpus_stats$words
-  k_sent <- korpus_stats$sentences
-  k_wps <- k_wc / k_sent
-
-  # reading time
+   # reading time
   # https://en.wikipedia.org/wiki/Words_per_minute#Reading_and_comprehension
   # assume 200 words per min
   wpm <-  200
-  reading_time_korp <- paste0(round(k_wc / wpm, 1), " minutes")
   reading_time_stri <- paste0(round(n_words_stri / wpm, 1), " minutes")
 
   return(list(
   # make the names more useful
   n_char_tot_stri = n_char_tot,
-  n_char_tot_korp = k_nchr,
-  n_words_korp = k_wc,
   n_words_stri = n_words_stri,
-  n_sentences_korp = k_sent,
-  words_per_sentence_korp = k_wps,
-  reading_time_korp = reading_time_korp,
   reading_time_stri = reading_time_stri
   ))
 
@@ -267,45 +153,5 @@ text_stats_fn_ <- function(text){
 
 
 text_stats_fn <- function(text){
-
-  l <- text_stats_fn_(text)
-
-  results_df <- data.frame(Method = c("Word count", "Character count", "Sentence count", "Reading time"),
-                           koRpus  = c(l$n_words_korp, l$n_char_tot_korp, l$n_sentences_korp, l$reading_time_korp),
-                           stringi = c(l$n_words_stri, l$n_char_tot_stri, "Not available", l$reading_time_stri)
-                           )
-
-  results_df_tab <- knitr::kable(results_df)
-  return(results_df_tab)
-
-}
-
-
-readability_fn_ <- function(text){
-
-  text <- prep_text(text)
-
-  oldw <- getOption("warn")
-  options(warn = -1)
-
- requireNamespace("koRpus")
-
-  # korpus methods
-  k1 <- prep_text_korpus(text)
-  k_readability <- koRpus::readability(k1)
-
-
-  return(k_readability)
-
-  # resume warnings
-  options(warn = oldw)
-}
-
-
-readability_fn <- function(text){
-  # a more condensed overview of the results
-  k_readability <- readability_fn_(text)
-  readability_summary_table <- knitr::kable(summary(k_readability))
-  return(readability_summary_table)
-
+  text_stats_fn_(text)
 }

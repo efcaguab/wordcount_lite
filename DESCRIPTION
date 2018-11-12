@@ -20,16 +20,7 @@ Description: This packages is an addin for RStudio that will count the words
 License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
-    knitr,
-    purrr,
-    stringi,
-    koRpus,
-    shiny (>= 0.13),
-    miniUI (>= 0.1.1),
-    rstudioapi (>= 0.5),
-    koRpus.lang.en,
-    sylly,
-    sylly.en
+    stringi
 RoxygenNote: 6.1.0
 Suggests:
     testthat,
