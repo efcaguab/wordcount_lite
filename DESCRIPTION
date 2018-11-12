@@ -1,4 +1,4 @@
-Package: wordcount_lite
+Package: wordcount.lite
 Type: Package
 Title: Word counts and readability statistics in R markdown documents
 Version: 0.2.0
